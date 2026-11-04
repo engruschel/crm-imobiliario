@@ -1,0 +1,17 @@
+# Dependências OPCIONAIS. O núcleo (envio ao Kindle, EPUB, busca, CLI) funciona só com a biblioteca padrão.
+# Instale apenas o que for usar:  pip install -r kindle_livros/requirements.txt
+
+# Leitura de PDF (comando converter/pipeline com arquivo .pdf)
+pypdf>=4.0
+
+# Tradução (comando traduzir, ou --idioma no pipeline) — usa o Google Tradutor por meio da biblioteca
+deep-translator>=1.11
+
+# Transcrição de áudio local (mp3, m4a, wav, ogg) — roda localmente, na CPU
+faster-whisper>=1.0
+
+# Legendas de vídeos do YouTube (somente legendas, o vídeo não é baixado)
+yt-dlp>=2024.1.1
+
+# Testes
+pytest>=8.0
