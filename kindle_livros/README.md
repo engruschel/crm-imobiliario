@@ -24,6 +24,8 @@ Para MOBI/AZW3, instale o [Calibre](https://calibre-ebook.com/) (o comando `eboo
 
 ## Passo a passo no Mac
 
+**Forma mais simples:** dentro de `kindle_livros/macos/`, dê dois cliques em `1 - Instalar Kindle Livros.command`. Depois, para enviar livros, dê dois cliques em `2 - Enviar livros ao Kindle.command`. Para remover, use `3 - Desinstalar Kindle Livros.command`. Os passos abaixo explicam o mesmo processo manualmente.
+
 Testado apenas em Linux. Estes passos seguem a mesma lógica no macOS, mas o envio ao Kindle em Mac ainda não foi verificado com um aparelho real.
 
 ### 1. Conferir o Python
