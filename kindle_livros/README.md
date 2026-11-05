@@ -22,6 +22,79 @@ pip install -r kindle_livros/requirements.txt
 
 Para MOBI/AZW3, instale o [Calibre](https://calibre-ebook.com/) (o comando `ebook-convert` precisa estar no PATH).
 
+## Passo a passo no Mac
+
+Testado apenas em Linux. Estes passos seguem a mesma lógica no macOS, mas o envio ao Kindle em Mac ainda não foi verificado com um aparelho real.
+
+### 1. Conferir o Python
+
+Abra o aplicativo **Terminal** (Cmd + Espaço, digite "Terminal") e rode:
+
+```bash
+python3 --version
+```
+
+Precisa ser **3.10 ou superior**. Se aparecer uma versão menor, ou se o Mac pedir para instalar as "ferramentas de desenvolvedor", instale o Python em https://www.python.org/downloads/ e abra um Terminal novo.
+
+### 2. Baixar o projeto
+
+```bash
+cd ~/Documents
+git clone https://github.com/engruschel/crm-imobiliario.git
+cd crm-imobiliario
+git checkout claude/kindle-custom-books-system-dbj73e
+```
+
+Se o Mac pedir para instalar as ferramentas de desenvolvedor do Xcode, aceite; isso instala o `git`.
+
+### 3. Criar um ambiente isolado e instalar as dependências opcionais
+
+No macOS recente, o Python do sistema não aceita `pip install` direto. Crie um ambiente virtual:
+
+```bash
+python3 -m venv ~/kindle-env
+source ~/kindle-env/bin/activate
+pip install -r kindle_livros/requirements.txt
+```
+
+Sempre que abrir um Terminal novo, rode `source ~/kindle-env/bin/activate` antes de usar o programa. O núcleo funciona sem esse passo, mas a tradução, a transcrição e as legendas do YouTube precisam dele.
+
+### 4. Conectar o Kindle e verificar
+
+1. Conecte o Kindle ao Mac pelo cabo USB e desbloqueie o aparelho, se pedir.
+2. No Finder, o Kindle deve aparecer na barra lateral com o nome **Kindle**.
+3. No Terminal, rode:
+
+```bash
+python3 -m kindle_livros detectar
+```
+
+A saída deve mostrar o caminho `/Volumes/Kindle`. Se aparecer "Nenhum Kindle encontrado":
+- confira se o volume aparece em `/Volumes` (rode `ls /Volumes`);
+- se o nome do volume for diferente de "Kindle", use `--destino /Volumes/NOME_DO_VOLUME` nos comandos de envio;
+- o Kindle precisa mostrar as pastas `documents/` e `system/` na raiz.
+
+### 5. Enviar um livro
+
+```bash
+python3 -m kindle_livros enviar ~/Downloads/meu_livro.epub
+```
+
+Use arquivos EPUB, PDF, MOBI, AZW3, TXT ou DOCX. Para substituir um livro que já está no Kindle, acrescente `--forcar`.
+
+### 6. Desconectar com segurança
+
+Antes de tirar o cabo, clique com o botão direito no ícone **Kindle** no Finder e escolha **Ejetar**. Só depois desconecte.
+
+### 7. Exemplo completo: buscar, converter, traduzir e enviar
+
+```bash
+python3 -m kindle_livros buscar "dom casmurro" --fonte gutenberg internet_archive
+python3 -m kindle_livros pipeline "dom casmurro" --fonte gutenberg --idioma en
+```
+
+O comando `pipeline` baixa o primeiro resultado, converte para EPUB, traduz para o idioma de `--idioma` e envia ao Kindle conectado. Sem Kindle, o EPUB fica na pasta `kindle_saida` dentro do diretório atual. Para escolher outro resultado, use `--indice 2`.
+
 ## Uso
 
 Execute a partir da pasta que contém `kindle_livros/`, com `python3 -m kindle_livros COMANDO`.
