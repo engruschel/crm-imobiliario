@@ -10,7 +10,8 @@ from kindle_livros.config import PAGINAS_POR_CAPITULO
 from kindle_livros.conversor import carregar_livro, garantir_saida_distinta, salvar_livro
 from kindle_livros.erros import ErroBusca, KindleLivrosError, KindleNaoEncontrado
 from kindle_livros.kindle_usb import detectar_kindles, enviar_para_kindle
-from kindle_livros.tradutor import DeepTranslatorBackend, Tradutor, TradutorComCache, traduzir_livro
+from kindle_livros.config import MODELO_TRADUCAO_PADRAO
+from kindle_livros.tradutor import ClaudeBackend, DeepTranslatorBackend, Tradutor, TradutorComCache, traduzir_livro
 
 AVISO_EJECAO = "Antes de desconectar, ejete o Kindle com segurança pelo sistema operacional."
 
@@ -39,6 +40,7 @@ def construir_parser() -> argparse.ArgumentParser:
     p.add_argument("--idioma-origem", default="pt")
     p.add_argument("-s", "--saida", type=Path, help="Arquivo EPUB de saída.")
     p.add_argument("--cache", type=Path, help="Arquivo JSON para guardar as traduções.")
+    _opcoes_traducao(p)
     p.set_defaults(func=_cmd_traduzir)
 
     p = sub.add_parser("enviar", help="Copia arquivos para a pasta documents/ do Kindle.")
@@ -53,6 +55,7 @@ def construir_parser() -> argparse.ArgumentParser:
     p.add_argument("--idioma-origem", default="pt")
     p.add_argument("--idioma", help="Idioma de destino da tradução (opcional).")
     p.add_argument("--cache", type=Path, help="Arquivo JSON de cache das traduções.")
+    _opcoes_traducao(p)
     p.add_argument("--saida", type=Path, default=Path("kindle_saida"), help="Pasta de trabalho (padrão: kindle_saida).")
     _opcoes_envio(p)
     p.set_defaults(func=_cmd_pipeline)
@@ -106,7 +109,7 @@ def _cmd_traduzir(args: argparse.Namespace) -> None:
     livro = carregar_livro(args.entrada, args.idioma_origem)
     saida = args.saida or Path(nome_arquivo(livro.titulo, "epub"))
     garantir_saida_distinta(args.entrada, saida)  # antes da tradução, para não gastar o serviço à toa
-    traduzido = traduzir_livro(livro, _tradutor(args.cache), args.idioma)
+    traduzido = traduzir_livro(livro, _tradutor(args), args.idioma)
     print(f"Livro traduzido ({args.idioma}): {salvar_livro(traduzido, saida).resolve()}")
 
 
@@ -136,7 +139,7 @@ def _cmd_pipeline(args: argparse.Namespace) -> None:
     garantir_saida_distinta(str(origem), epub)  # antes da tradução
     if args.idioma:
         print(f"Traduzindo para '{args.idioma}'...")
-        livro = traduzir_livro(livro, _tradutor(args.cache), args.idioma)
+        livro = traduzir_livro(livro, _tradutor(args), args.idioma)
     salvar_livro(livro, epub)
     print(f"EPUB gerado: {epub.resolve()}")
 
@@ -161,8 +164,20 @@ def _enviar(arquivos: list[Path], destino: Path | None, forcar: bool, confirmar_
     print(AVISO_EJECAO)
 
 
-def _tradutor(cache: Path | None) -> Tradutor:
-    base = DeepTranslatorBackend()
+def _opcoes_traducao(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--tradutor", choices=["claude", "google"], default="claude",
+                   help="claude: tradução por IA (padrão, precisa de ANTHROPIC_API_KEY); "
+                        "google: Google Tradutor (sem IA).")
+    p.add_argument("--modelo", default=MODELO_TRADUCAO_PADRAO,
+                   help=f"Modelo de IA para --tradutor claude (padrão: {MODELO_TRADUCAO_PADRAO}).")
+
+
+def _tradutor(args: argparse.Namespace) -> Tradutor:
+    if args.tradutor == "google":
+        base: Tradutor = DeepTranslatorBackend()
+    else:
+        base = ClaudeBackend(modelo=args.modelo)
+    cache = args.cache
     return TradutorComCache(base, cache) if cache else base
 
 

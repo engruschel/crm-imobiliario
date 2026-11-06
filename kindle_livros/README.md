@@ -8,7 +8,7 @@ Ferramenta de linha de comando para:
 - **traduzir** o livro para outro idioma;
 - rodar tudo de uma vez com o comando `pipeline`.
 
-O núcleo usa apenas a biblioteca padrão do Python 3.10+. Pypdf, deep-translator, faster-whisper e yt-dlp são opcionais.
+O núcleo usa apenas a biblioteca padrão do Python 3.10+. Pypdf, deep-translator, faster-whisper e yt-dlp são opcionais. A tradução por IA usa a API da Anthropic (chave em `ANTHROPIC_API_KEY`).
 
 ## Instalação
 
@@ -155,7 +155,23 @@ python3 -m kindle_livros pipeline "pride and prejudice" --idioma pt
 
 ### Tradução
 
-A tradução usa a interface `Tradutor` (`kindle_livros/tradutor.py`), que recebe uma lista de textos e devolve a lista traduzida. A implementação padrão usa `deep-translator` (Google Tradutor). Para usar outro serviço, crie uma classe com `traduzir(textos, destino)` e passe-a a `traduzir_livro`. O envio é feito em blocos de até 4500 caracteres, com novas tentativas e espera exponencial.
+A tradução padrão é feita por IA (Claude, pela API oficial da Anthropic). Ela entende o contexto do livro, mantém nomes e tom, e traduz em blocos de até 4500 caracteres.
+
+- Precisa de uma chave da API: crie em https://console.anthropic.com e defina `ANTHROPIC_API_KEY`. No instalador para Mac, a chave é pedida na instalação e guardada só nesse computador, com permissão restrita.
+- Custo: a API é paga por uso. Livros grandes gastam mais; use `--cache` para não pagar duas vezes pelo mesmo trecho.
+- Modelo: `--modelo` escolhe o modelo (padrão `claude-sonnet-5-5`; `claude-haiku-5-5` é mais barato e mais rápido, com menos qualidade literária).
+- Sem IA: `--tradutor google` usa o Google Tradutor (biblioteca `deep-translator`). Qualidade menor, sem custo e sem chave.
+
+Exemplos:
+
+```bash
+export ANTHROPIC_API_KEY="sua-chave"
+python3 -m kindle_livros traduzir livro.epub --idioma en --cache cache_en.json
+python3 -m kindle_livros traduzir livro.epub --idioma en --modelo claude-haiku-5-5
+python3 -m kindle_livros traduzir livro.epub --idioma en --tradutor google
+```
+
+Para outro serviço de tradução, crie uma classe com `traduzir(textos, destino)` (ver `kindle_livros/tradutor.py`).
 
 ## Testes
 

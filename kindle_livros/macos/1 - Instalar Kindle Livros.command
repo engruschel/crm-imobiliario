@@ -39,7 +39,7 @@ done
 if [ -z "$PY" ]; then
   falha "Python 3.10 ou superior não encontrado. Instale em https://www.python.org/downloads/ e rode este instalador de novo."
 fi
-echo "[1/4] Python encontrado: $PY ($("$PY" --version 2>&1))"
+echo "[1/5] Python encontrado: $PY ($("$PY" --version 2>&1))"
 
 # 2. Copia o código para a pasta de instalação
 if [ ! -f "$ORIGEM/__init__.py" ] || [ ! -f "$ORIGEM/cli.py" ]; then
@@ -50,23 +50,42 @@ rm -rf "$APP_DIR/src/kindle_livros"
 mkdir -p "$APP_DIR/src/kindle_livros"
 cp -R "$ORIGEM/." "$APP_DIR/src/kindle_livros/" || falha "Não foi possível copiar os arquivos."
 rm -rf "$APP_DIR/src/kindle_livros/macos" "$APP_DIR/src/kindle_livros/tests" "$APP_DIR/src/kindle_livros/__pycache__"
-echo "[2/4] Arquivos copiados para $APP_DIR/src"
+echo "[2/5] Arquivos copiados para $APP_DIR/src"
 
 # 3. Ambiente Python isolado e dependências
 rm -rf "$APP_DIR/venv"
 "$PY" -m venv "$APP_DIR/venv" || falha "Não foi possível criar o ambiente Python."
 PIP="$APP_DIR/venv/bin/pip"
 "$PIP" install --quiet --upgrade pip || falha "Falha ao atualizar o pip (verifique a conexão com a internet)."
-echo "[3/4] Instalando dependências (pode levar alguns minutos)..."
+echo "[3/5] Instalando dependências (pode levar alguns minutos)..."
 "$PIP" install --quiet pypdf deep-translator yt-dlp || falha "Falha ao instalar dependências (verifique a conexão com a internet)."
 if ! "$PIP" install --quiet faster-whisper; then
   echo "AVISO: faster-whisper não foi instalado. Transcrição de áudio ficará indisponível; o resto funciona."
 fi
 
-# 4. Comando kindle-livros
+# 4. Chave da API para tradução por IA (opcional, guardada só neste Mac com permissão restrita)
+CHAVE_ARQ="$APP_DIR/chave_api"
+if [ -t 0 ] && [ ! -s "$CHAVE_ARQ" ] && [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+  echo ""
+  echo "Tradução por IA (Claude) usa uma chave da API Anthropic (https://console.anthropic.com)."
+  read -r -s -p "Cole a chave (ou Enter para pular e configurar depois): " CHAVE
+  echo ""
+  if [ -n "$CHAVE" ]; then
+    umask 077
+    printf '%s' "$CHAVE" > "$CHAVE_ARQ"
+    chmod 600 "$CHAVE_ARQ"
+    echo "Chave salva em $CHAVE_ARQ"
+  fi
+  unset CHAVE
+fi
+
+# 5. Comando kindle-livros
 mkdir -p "$BIN_DIR" || falha "Não foi possível criar $BIN_DIR"
 cat > "$BIN_DIR/kindle-livros" <<LAUNCHER
 #!/bin/bash
+if [ -s "$APP_DIR/chave_api" ] && [ -z "\${ANTHROPIC_API_KEY:-}" ]; then
+  export ANTHROPIC_API_KEY="\$(cat "$APP_DIR/chave_api")"
+fi
 export PYTHONPATH="$APP_DIR/src\${PYTHONPATH:+:\$PYTHONPATH}"
 exec "$APP_DIR/venv/bin/python" -m kindle_livros "\$@"
 LAUNCHER
@@ -84,7 +103,7 @@ case ":$PATH:" in
 esac
 
 if "$BIN_DIR/kindle-livros" --help >/dev/null 2>&1; then
-  echo "[4/4] Comando instalado: $BIN_DIR/kindle-livros"
+  echo "[5/5] Comando instalado: $BIN_DIR/kindle-livros"
 else
   falha "A instalação terminou, mas o comando não respondeu. Veja a mensagem acima."
 fi
