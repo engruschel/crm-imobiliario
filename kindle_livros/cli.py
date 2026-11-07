@@ -48,6 +48,11 @@ def construir_parser() -> argparse.ArgumentParser:
     _opcoes_envio(p)
     p.set_defaults(func=_cmd_enviar)
 
+    p = sub.add_parser("app", help="Abre o aplicativo no navegador: arraste um livro ou cole um link do YouTube.")
+    p.add_argument("--porta", type=int, default=8765, help="Porta local (padrão: 8765).")
+    p.add_argument("--sem-navegador", action="store_true", help="Não abre o navegador automaticamente.")
+    p.set_defaults(func=_cmd_app)
+
     p = sub.add_parser("pipeline", help="Busca, converte, traduz e envia o primeiro resultado em um comando.")
     p.add_argument("termo")
     _opcoes_busca(p)
@@ -111,6 +116,12 @@ def _cmd_traduzir(args: argparse.Namespace) -> None:
     garantir_saida_distinta(args.entrada, saida)  # antes da tradução, para não gastar o serviço à toa
     traduzido = traduzir_livro(livro, _tradutor(args), args.idioma)
     print(f"Livro traduzido ({args.idioma}): {salvar_livro(traduzido, saida).resolve()}")
+
+
+def _cmd_app(args: argparse.Namespace) -> None:
+    from kindle_livros.aplicativo import iniciar
+
+    iniciar(abrir_navegador=not args.sem_navegador, porta=args.porta)
 
 
 def _cmd_enviar(args: argparse.Namespace) -> None:

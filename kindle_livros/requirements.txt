@@ -4,6 +4,9 @@
 # Leitura de PDF (comando converter/pipeline com arquivo .pdf)
 pypdf>=4.0
 
+# Detecção automática do idioma do livro (app e pipeline)
+langdetect>=1.0.9
+
 # Tradução (comando traduzir, ou --idioma no pipeline) — usa o Google Tradutor por meio da biblioteca
 deep-translator>=1.11
 

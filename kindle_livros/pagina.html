@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kindle Livros</title>
+<style>
+  :root {
+    --fundo:#fbfbfd; --cartao:#ffffff; --texto:#1d1d1f; --suave:#6e6e73;
+    --acento:#0071e3; --acento-texto:#ffffff; --linha:#d2d2d7; --erro:#d70015;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --fundo:#000000; --cartao:#1c1c1e; --texto:#f5f5f7; --suave:#98989d; --acento:#0a84ff; --linha:#38383a; --erro:#ff453a; }
+  }
+  :root[data-theme="dark"] { --fundo:#000000; --cartao:#1c1c1e; --texto:#f5f5f7; --suave:#98989d; --acento:#0a84ff; --linha:#38383a; --erro:#ff453a; }
+
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--fundo); color:var(--texto);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  main { max-width:880px; margin:0 auto; padding:56px 20px 72px; min-height:100vh; }
+  .tela { display:none; animation:entrar .35s ease; }
+  .tela.ativa { display:block; }
+  @keyframes entrar { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+  h1 { font-size:clamp(2rem,5vw,3.2rem); font-weight:700; letter-spacing:-.02em; margin:0 0 10px; line-height:1.1; }
+  .lead { font-size:clamp(1.05rem,2.4vw,1.25rem); color:var(--suave); margin:0 0 36px; }
+  h2 { font-size:1.5rem; font-weight:650; margin:0 0 6px; }
+  .pequeno { color:var(--suave); font-size:.92rem; }
+
+  /* Tela 1: arrastar */
+  .soltar { border:1.5px dashed var(--linha); border-radius:22px; background:var(--cartao); padding:64px 24px; text-align:center; cursor:pointer; transition:border-color .2s, transform .2s; }
+  .soltar:hover, .soltar.ativo { border-color:var(--acento); transform:scale(1.01); }
+  .soltar .icone { font-size:44px; line-height:1; margin-bottom:14px; }
+  .soltar strong { display:block; font-size:1.25rem; margin-bottom:6px; font-weight:600; }
+  .link { margin-top:28px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  input[type=text] { flex:1 1 320px; max-width:520px; padding:14px 16px; border-radius:14px; border:1px solid var(--linha); background:var(--cartao); color:var(--texto); font-size:1rem; outline:none; }
+  input[type=text]:focus { border-color:var(--acento); }
+
+  /* Botões */
+  .botao { appearance:none; border:0; border-radius:999px; background:var(--acento); color:var(--acento-texto); font-size:1.02rem; font-weight:600; padding:13px 26px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:8px; transition:opacity .2s, transform .15s; }
+  .botao:hover { transform:translateY(-1px); }
+  .botao:disabled { opacity:.4; cursor:default; transform:none; }
+  .botao.discreto { background:transparent; color:var(--acento); padding:12px 8px; font-weight:500; }
+  .botao.grande { font-size:1.15rem; padding:16px 34px; }
+
+  /* Tela 2: prévia */
+  .topo { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:28px; }
+  .colunas { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .coluna { background:var(--cartao); border-radius:20px; padding:22px; border:1px solid var(--linha); min-width:0; }
+  .coluna h3 { font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:var(--suave); margin:0 0 14px; font-weight:600; }
+  .coluna p { line-height:1.6; margin:0 0 14px; font-size:1rem; overflow-wrap:anywhere; }
+  .coluna p.destaque { font-size:1.2rem; font-weight:600; }
+  .formatos { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:32px 0 22px; }
+  .formato { background:var(--cartao); border:1.5px solid var(--linha); border-radius:18px; padding:18px 14px; cursor:pointer; text-align:left; color:var(--texto); font:inherit; }
+  .formato strong { display:block; font-size:1.05rem; margin-bottom:4px; }
+  .formato span { color:var(--suave); font-size:.88rem; }
+  .formato.escolhido { border-color:var(--acento); box-shadow:0 0 0 3px color-mix(in srgb, var(--acento) 25%, transparent); }
+  .selo { display:inline-block; font-size:.72rem; font-weight:600; color:var(--acento); margin-bottom:6px; letter-spacing:.04em; }
+  .rodape { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-top:12px; }
+
+  /* Progresso */
+  .espera { margin-top:28px; text-align:center; }
+  .espera p { color:var(--suave); margin:10px 0 0; }
+  .bolinhas { display:flex; gap:8px; justify-content:center; }
+  .bolinhas i { width:9px; height:9px; border-radius:50%; background:var(--acento); opacity:.25; animation:pulsar 1.2s infinite; }
+  .bolinhas i:nth-child(2) { animation-delay:.2s; } .bolinhas i:nth-child(3) { animation-delay:.4s; }
+  @keyframes pulsar { 0%,100% { opacity:.2; transform:scale(.9); } 50% { opacity:1; transform:scale(1.15); } }
+
+  /* Erro */
+  .aviso { margin-top:20px; padding:14px 16px; border-radius:14px; background:color-mix(in srgb, var(--erro) 10%, transparent); color:var(--erro); font-size:.98rem; }
+
+  /* Tela 3: pronto */
+  .pronto { text-align:center; padding-top:24px; }
+  .pronto .marca { font-size:56px; color:var(--acento); line-height:1; margin-bottom:14px; }
+  .pronto .titulo-livro { font-size:1.4rem; font-weight:650; margin:0 0 6px; }
+  .passos { text-align:left; max-width:520px; margin:36px auto 0; background:var(--cartao); border:1px solid var(--linha); border-radius:20px; padding:22px 24px; }
+  .passos ol { margin:0; padding-left:22px; line-height:1.9; font-size:1.02rem; }
+  .acoes { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:30px; }
+
+  @media (max-width:640px) {
+    main { padding:32px 16px 56px; }
+    .colunas { grid-template-columns:1fr; }
+    .formatos { grid-template-columns:1fr; }
+    .soltar { padding:44px 18px; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- Tela 1 -->
+  <section id="tela-inicio" class="tela ativa">
+    <h1>Seu livro, em português.</h1>
+    <p class="lead">Arraste um arquivo e veja a tradução antes de salvar.</p>
+
+    <div id="soltar" class="soltar" role="button" tabindex="0" aria-label="Escolher um livro">
+      <div class="icone">📖</div>
+      <strong>Arraste o livro aqui</strong>
+      <span class="pequeno">PDF, EPUB, TXT ou áudio · ou clique para escolher</span>
+      <input id="arquivo" type="file" accept=".pdf,.epub,.txt,.mp3,.m4a,.wav,.ogg" hidden>
+    </div>
+
+    <div class="link">
+      <input id="link" type="text" placeholder="Ou cole um link do YouTube" aria-label="Link do YouTube">
+      <button id="btn-link" class="botao">Usar link</button>
+    </div>
+    <div id="erro-inicio"></div>
+  </section>
+
+  <!-- Espera (usada em várias etapas) -->
+  <section id="tela-espera" class="tela">
+    <h1 id="espera-titulo">Lendo o seu livro…</h1>
+    <p class="lead" id="espera-texto">Isso leva só alguns segundos.</p>
+    <div class="espera"><div class="bolinhas"><i></i><i></i><i></i></div></div>
+  </section>
+
+  <!-- Tela 2: prévia -->
+  <section id="tela-previa" class="tela">
+    <div class="topo">
+      <div>
+        <h2 id="previa-titulo">Veja como ficou</h2>
+        <p class="pequeno" id="previa-sub"></p>
+      </div>
+      <button class="botao discreto" data-voltar>← Outro livro</button>
+    </div>
+
+    <div class="colunas">
+      <div class="coluna"><h3>Original</h3><div id="col-original"></div></div>
+      <div class="coluna"><h3>Português</h3><div id="col-traducao"></div></div>
+    </div>
+
+    <h2 style="margin-top:44px">Como você quer receber?</h2>
+    <div class="formatos" id="formatos">
+      <button class="formato escolhido" data-formato="epub"><span class="selo">RECOMENDADO</span><strong>Kindle</strong><span>Formato EPUB, para o Send to Kindle</span></button>
+      <button class="formato" data-formato="pdf"><strong>PDF</strong><span>Para ler no computador ou imprimir</span></button>
+      <button class="formato" data-formato="txt"><strong>Texto</strong><span>Arquivo simples, para editar</span></button>
+    </div>
+
+    <div class="rodape">
+      <span class="pequeno">A tradução do livro inteiro pode levar alguns minutos.</span>
+      <button id="btn-criar" class="botao grande">Criar meu livro</button>
+    </div>
+    <div id="erro-previa"></div>
+  </section>
+
+  <!-- Tela 3: pronto -->
+  <section id="tela-pronto" class="tela">
+    <div class="pronto">
+      <div class="marca">✓</div>
+      <h1>Pronto.</h1>
+      <p class="titulo-livro" id="pronto-titulo"></p>
+      <p class="pequeno" id="pronto-formato"></p>
+
+      <div class="acoes">
+        <a id="btn-baixar" class="botao grande" href="#" download>Salvar arquivo</a>
+      </div>
+
+      <div class="passos" id="bloco-kindle">
+        <h2 style="font-size:1.15rem">Enviar para o Kindle</h2>
+        <ol>
+          <li>Abra o <a id="link-kindle" href="https://www.amazon.com/sendtokindle" target="_blank" rel="noopener">Send to Kindle</a> e entre na sua conta Amazon.</li>
+          <li>Arraste o arquivo salvo para a página.</li>
+          <li>Escolha o seu Kindle. O livro aparece nele depois de sincronizar.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="acoes"><button class="botao discreto" data-voltar>Traduzir outro livro</button></div>
+  </section>
+
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const telas = ['tela-inicio','tela-espera','tela-previa','tela-pronto'];
+let fonte = null;
+let formato = 'epub';
+
+function mostrar(id) {
+  telas.forEach(t => $(t).classList.toggle('ativa', t === id));
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+function esperar(titulo, texto) {
+  $('espera-titulo').textContent = titulo;
+  $('espera-texto').textContent = texto;
+  mostrar('tela-espera');
+}
+function avisar(alvo, mensagem) {
+  $(alvo).innerHTML = mensagem ? '<div class="aviso"></div>' : '';
+  if (mensagem) $(alvo).firstChild.textContent = mensagem;
+}
+
+async function ler(r) {
+  let dados = {};
+  try { dados = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error(dados.erro || 'Não consegui fazer isso. Tente de novo.');
+  return dados;
+}
+async function postJson(url, corpo) {
+  return ler(await fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(corpo)}));
+}
+
+function preencherPrevia(previa) {
+  $('previa-titulo').textContent = previa.titulo;
+  const pt = previa.precisa_traduzir;
+  $('previa-sub').textContent = !pt
+    ? 'Este livro já está em português. Só vamos montar o arquivo.'
+    : 'Este é um trecho do começo, traduzido para português.';
+  $('col-original').innerHTML = '';
+  $('col-traducao').innerHTML = '';
+  previa.pares.forEach((par, i) => {
+    const a = document.createElement('p'); a.textContent = par.original;
+    const b = document.createElement('p'); b.textContent = par.traducao;
+    if (i === 0) { a.className = 'destaque'; b.className = 'destaque'; }
+    $('col-original').appendChild(a);
+    $('col-traducao').appendChild(b);
+  });
+  mostrar('tela-previa');
+}
+
+async function comecarComArquivo(arquivo) {
+  avisar('erro-inicio', '');
+  esperar('Lendo o seu livro…', arquivo.name);
+  try {
+    const r = await fetch('/fonte', {method: 'POST', headers: {'X-Nome-Arquivo': encodeURIComponent(arquivo.name)}, body: arquivo});
+    fonte = await ler(r);
+    await carregarPrevia();
+  } catch (e) {
+    mostrar('tela-inicio');
+    avisar('erro-inicio', e.message);
+  }
+}
+
+async function comecarComLink() {
+  const url = $('link').value.trim();
+  if (!url) return avisar('erro-inicio', 'Cole um link do YouTube.');
+  avisar('erro-inicio', '');
+  esperar('Buscando as legendas…', 'Pode levar um minuto.');
+  try {
+    fonte = await postJson('/fonte-link', {url});
+    await carregarPrevia();
+  } catch (e) {
+    mostrar('tela-inicio');
+    avisar('erro-inicio', e.message);
+  }
+}
+
+async function carregarPrevia() {
+  esperar('Traduzindo um trecho…', 'Assim você vê como ficou antes de criar o livro inteiro.');
+  try {
+    const previa = await postJson('/previa', {id: fonte.id});
+    preencherPrevia(previa);
+  } catch (e) {
+    mostrar('tela-inicio');
+    avisar('erro-inicio', e.message);
+  }
+}
+
+async function criarLivro() {
+  avisar('erro-previa', '');
+  esperar('Criando o seu livro…', 'Traduzindo o livro inteiro. Não feche esta janela.');
+  try {
+    const r = await postJson('/gerar', {id: fonte.id, formato});
+    $('pronto-titulo').textContent = fonte.titulo;
+    $('pronto-formato').textContent = `Arquivo: ${r.rotulo}`;
+    $('btn-baixar').href = '/arquivos/' + encodeURIComponent(r.arquivo);
+    $('btn-baixar').setAttribute('download', r.arquivo);
+    $('bloco-kindle').style.display = formato === 'epub' ? 'block' : 'none';
+    mostrar('tela-pronto');
+  } catch (e) {
+    mostrar('tela-previa');
+    avisar('erro-previa', e.message);
+  }
+}
+
+// Eventos
+const soltar = $('soltar');
+soltar.addEventListener('click', () => $('arquivo').click());
+soltar.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('arquivo').click(); } });
+$('arquivo').addEventListener('change', () => { if ($('arquivo').files[0]) comecarComArquivo($('arquivo').files[0]); });
+['dragenter','dragover'].forEach(ev => soltar.addEventListener(ev, e => { e.preventDefault(); soltar.classList.add('ativo'); }));
+['dragleave','drop'].forEach(ev => soltar.addEventListener(ev, e => { e.preventDefault(); soltar.classList.remove('ativo'); }));
+soltar.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) comecarComArquivo(f); });
+$('btn-link').addEventListener('click', comecarComLink);
+$('link').addEventListener('keydown', e => { if (e.key === 'Enter') comecarComLink(); });
+document.querySelectorAll('[data-formato]').forEach(botao => botao.addEventListener('click', () => {
+  formato = botao.dataset.formato;
+  document.querySelectorAll('[data-formato]').forEach(b => b.classList.toggle('escolhido', b === botao));
+}));
+$('btn-criar').addEventListener('click', criarLivro);
+document.querySelectorAll('[data-voltar]').forEach(b => b.addEventListener('click', () => { fonte = null; mostrar('tela-inicio'); }));
+</script>
+</body>
+</html>

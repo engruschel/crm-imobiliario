@@ -10,7 +10,7 @@ from kindle_livros.erros import KindleNaoEncontrado
 def test_parser_tem_todos_os_subcomandos() -> None:
     parser = cli.construir_parser()
     subcomandos = parser._subparsers._group_actions[0].choices  # type: ignore[attr-defined]
-    assert set(subcomandos) == {"detectar", "buscar", "converter", "traduzir", "enviar", "pipeline"}
+    assert set(subcomandos) == {"detectar", "buscar", "converter", "traduzir", "enviar", "pipeline", "app"}
 
 
 def test_detectar_sem_kindle_informa_em_portugues(capsys: pytest.CaptureFixture[str]) -> None:

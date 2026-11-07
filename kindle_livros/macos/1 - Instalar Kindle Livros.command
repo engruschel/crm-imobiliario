@@ -58,7 +58,10 @@ rm -rf "$APP_DIR/venv"
 PIP="$APP_DIR/venv/bin/pip"
 "$PIP" install --quiet --upgrade pip || falha "Falha ao atualizar o pip (verifique a conexão com a internet)."
 echo "[3/5] Instalando dependências (pode levar alguns minutos)..."
-"$PIP" install --quiet pypdf deep-translator yt-dlp || falha "Falha ao instalar dependências (verifique a conexão com a internet)."
+"$PIP" install --quiet pypdf reportlab deep-translator yt-dlp || falha "Falha ao instalar dependências (verifique a conexão com a internet)."
+if ! "$PIP" install --quiet langdetect; then
+  echo "AVISO: langdetect não foi instalado. O idioma será assumido como não português; a tradução continua."
+fi
 if ! "$PIP" install --quiet faster-whisper; then
   echo "AVISO: faster-whisper não foi instalado. Transcrição de áudio ficará indisponível; o resto funciona."
 fi
@@ -112,10 +115,10 @@ echo ""
 echo "=== Pronto! ==="
 echo "Abra um Terminal NOVO e rode:  kindle-livros detectar"
 # Atalho de envio na Área de Trabalho (funciona mesmo depois de apagar a pasta baixada)
-ATALHO="$HOME/Desktop/Enviar livros ao Kindle.command"
-if [ -d "$HOME/Desktop" ] && cp "$ORIGEM/macos/2 - Enviar livros ao Kindle.command" "$ATALHO" 2>/dev/null; then
+ATALHO="$HOME/Desktop/Kindle Livros.command"
+if [ -d "$HOME/Desktop" ] && cp "$ORIGEM/macos/Kindle Livros.command" "$ATALHO" 2>/dev/null; then
   chmod +x "$ATALHO"
-  echo "Atalho criado na Área de Trabalho: Enviar livros ao Kindle.command"
+  echo "Atalho criado na Área de Trabalho: Kindle Livros.command"
 fi
 echo "Para enviar livros pelo Terminal: kindle-livros enviar ~/Downloads/livro.epub"
 pausa
