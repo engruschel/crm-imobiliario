@@ -71,7 +71,8 @@ def previa(fonte_id: str, tradutor: Tradutor | None = None) -> dict[str, Any]:
     originais = [livro.titulo]
     if livro.capitulos:
         primeiro = livro.capitulos[0]
-        originais += [primeiro.titulo] + primeiro.paragrafos[:TRECHOS_PREVIA]
+        capitulo = [primeiro.titulo] if primeiro.titulo and primeiro.titulo != livro.titulo else []
+        originais += capitulo + primeiro.paragrafos[:TRECHOS_PREVIA]
     amostra = Livro(livro.titulo, livro.autor, livro.idioma, [Capitulo("", originais[1:])])
     traduzido = _traduzir(amostra, tradutor or _tradutor())
     traducoes = [traduzido.titulo] + traduzido.capitulos[0].paragrafos
@@ -90,7 +91,7 @@ def _livro_de(fonte_id: str) -> Livro:
     with _trava:
         livro = _fontes.get(fonte_id)
     if livro is None:
-        raise KindleLivrosError("Este livro expirou. Arraste o arquivo de novo.")
+        raise KindleLivrosError("Não encontrei mais este livro. Arraste o arquivo de novo.")
     return livro
 
 
@@ -146,7 +147,7 @@ class _Manipulador(BaseHTTPRequestHandler):
                 nome = unquote(self.headers.get("X-Nome-Arquivo", "livro"))
                 extensao = Path(nome).suffix.lower()
                 if extensao not in EXTENSOES_ACEITAS:
-                    raise KindleLivrosError("Use um PDF, EPUB, TXT ou arquivo de áudio.")
+                    raise KindleLivrosError("Este tipo de arquivo não funciona aqui. Use um livro em PDF, EPUB ou TXT.")
                 pasta = PASTA_ENTRADA / uuid.uuid4().hex  # pasta própria; o arquivo mantém o nome original
                 pasta.mkdir(parents=True, exist_ok=True)
                 destino = pasta / nome_arquivo(Path(nome).stem, extensao.lstrip("."))
@@ -155,7 +156,7 @@ class _Manipulador(BaseHTTPRequestHandler):
             elif caminho == "/fonte-link":
                 url = str(json.loads(self._corpo().decode("utf-8")).get("url", "")).strip()
                 if not _url_youtube_valida(url):
-                    raise KindleLivrosError("Cole um link do YouTube (youtube.com/watch ou youtu.be).")
+                    raise KindleLivrosError("Este endereço não é de um vídeo do YouTube. Copie o endereço da barra do navegador, com o vídeo aberto.")
                 self._json(200, registrar_fonte(url))
             elif caminho == "/previa":
                 dados = json.loads(self._corpo().decode("utf-8"))
@@ -171,7 +172,7 @@ class _Manipulador(BaseHTTPRequestHandler):
         except KindleLivrosError as exc:
             self._json(400, {"erro": str(exc)})
         except Exception:  # o servidor continua de pé; a página mostra a mensagem
-            self._json(500, {"erro": "Algo deu errado. Tente de novo; se continuar, veja o Terminal."})
+            self._json(500, {"erro": "Algo não deu certo. Tente de novo. Se acontecer outra vez, feche o app e abra de novo."})
 
 
 def criar_servidor(porta: int = 8765) -> ThreadingHTTPServer:

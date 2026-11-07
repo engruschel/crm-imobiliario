@@ -102,13 +102,13 @@ def test_formato_desconhecido_e_recusado(app):
 def test_fonte_expirada_pede_novo_envio(app):
     status, corpo = _json(app, "/previa", {"id": "naoexiste"})
     assert status == 400
-    assert "expirou" in corpo["erro"]
+    assert "Arraste o arquivo de novo" in corpo["erro"]
 
 
 def test_extensao_nao_aceita_e_recusada(app):
     status, corpo = _enviar_txt(app, nome="foto.png", texto="x")
     assert status == 400
-    assert "PDF, EPUB, TXT" in corpo["erro"]
+    assert "PDF, EPUB ou TXT" in corpo["erro"]
 
 
 def test_download_so_entrega_formatos_de_livro_da_pasta_de_saida(app, tmp_path):
@@ -123,7 +123,7 @@ def test_download_so_entrega_formatos_de_livro_da_pasta_de_saida(app, tmp_path):
 def test_link_que_nao_e_youtube_e_recusado(app):
     status, corpo = _json(app, "/fonte-link", {"url": "https://exemplo.com/outro"})
     assert status == 400
-    assert "YouTube" in corpo["erro"]
+    assert "vídeo do YouTube" in corpo["erro"]
 
 
 def test_gera_pdf_e_texto(tmp_path):
