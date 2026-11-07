@@ -111,5 +111,11 @@ fi
 echo ""
 echo "=== Pronto! ==="
 echo "Abra um Terminal NOVO e rode:  kindle-livros detectar"
-echo "Para enviar livros, use também o arquivo '2 - Enviar livros ao Kindle.command'."
+# Atalho de envio na Área de Trabalho (funciona mesmo depois de apagar a pasta baixada)
+ATALHO="$HOME/Desktop/Enviar livros ao Kindle.command"
+if [ -d "$HOME/Desktop" ] && cp "$ORIGEM/macos/2 - Enviar livros ao Kindle.command" "$ATALHO" 2>/dev/null; then
+  chmod +x "$ATALHO"
+  echo "Atalho criado na Área de Trabalho: Enviar livros ao Kindle.command"
+fi
+echo "Para enviar livros pelo Terminal: kindle-livros enviar ~/Downloads/livro.epub"
 pausa
