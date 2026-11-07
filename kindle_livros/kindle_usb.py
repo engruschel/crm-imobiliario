@@ -24,12 +24,14 @@ class ResultadoEnvio:
 
 
 def padroes_de_montagem(plataforma: str) -> tuple[str, ...]:
+    """Pontos de montagem onde procurar. O nome do volume não importa: a assinatura
+    (pastas documents/ e system/) é que identifica um Kindle."""
     if plataforma == "darwin":
-        return (f"/Volumes/{NOME_VOLUME}",)
+        return ("/Volumes/*",)
     return (
-        f"/media/*/{NOME_VOLUME}",
-        f"/run/media/*/{NOME_VOLUME}",
-        f"/mnt/{NOME_VOLUME}",
+        "/media/*/*",
+        "/run/media/*/*",
+        "/mnt/*",
     )
 
 

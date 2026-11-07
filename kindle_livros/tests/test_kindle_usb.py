@@ -76,3 +76,14 @@ def test_destino_inexistente_gera_erro(tmp_path: Path) -> None:
     livro.write_text("oi", encoding="utf-8")
     with pytest.raises(KindleNaoEncontrado):
         enviar_para_kindle([livro], tmp_path / "nao_existe")
+
+
+def test_detecta_kindle_com_nome_de_volume_diferente(tmp_path):
+    from kindle_livros.kindle_usb import detectar_kindles, padroes_de_montagem
+
+    volume = tmp_path / "Kindle Paperwhite"
+    (volume / "documents").mkdir(parents=True)
+    (volume / "system").mkdir()
+    (tmp_path / "Outro disco").mkdir()  # sem assinatura de Kindle: deve ser ignorado
+    assert detectar_kindles("darwin", padroes=[str(tmp_path / "*")]) == [volume]
+    assert padroes_de_montagem("darwin") == ("/Volumes/*",)
